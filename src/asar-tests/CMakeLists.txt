@@ -40,14 +40,14 @@ endmacro()
 set(CXX_EXTENSIONS OFF)
 
 if(ASAR_GEN_EXE_TEST)
-    add_executable(
-        asar-app-test
-        
-        "test.cpp"
-		"util.cpp"
-    )
+	add_executable(
+		asar-app-test
 
-    set_asar_test_shared_properties(asar-app-test)
+		"test.cpp"
+		"util.cpp"
+	)
+
+	set_asar_test_shared_properties(asar-app-test)
 
 	if(ASAR_GEN_EXE)
 		file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tests_tmp_app")
@@ -58,18 +58,18 @@ if(ASAR_GEN_EXE_TEST)
 endif()
 
 if(ASAR_GEN_DLL_TEST)
-    add_executable(
-        asar-dll-test
-        
-        "test.cpp"
-        
-		"util.cpp"
-        "../asar-dll-bindings/asardll.c"
-        "../asar-dll-bindings/asardll.h"
-    )
+	add_executable(
+		asar-dll-test
 
-    target_include_directories(asar-dll-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/")
-    target_compile_definitions(asar-dll-test PRIVATE ASAR_TEST_DLL)
+		"test.cpp"
+		"util.cpp"
+
+		"../asar-dll-bindings/asardll.c"
+		"../asar-dll-bindings/asardll.h"
+	)
+
+	target_include_directories(asar-dll-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/")
+	target_compile_definitions(asar-dll-test PRIVATE ASAR_TEST_DLL)
 
 	set_asar_test_shared_properties(asar-dll-test)
 	if(ASAR_GEN_EXE)
