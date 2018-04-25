@@ -14,6 +14,7 @@ environment:
     - CMAKE_TARGET: "Visual Studio 14 2015 Win64"
       PLATFORM: "x64"
 build:
+  project: build\asar.sln
   verbosity: minimal
 artifacts:
 - path: build\src\asar\MinSizeRel\asar-standalone.exe

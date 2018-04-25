@@ -1,9 +1,14 @@
 cmake_minimum_required(VERSION 3.9.0)
 
 include(CMakeDependentOption)
+include(CheckLanguage)
+
+check_language(CSharp)
+
 CMAKE_DEPENDENT_OPTION(ASAR_GEN_EXE_TEST "Build Asar standalone application test suite" ON "ASAR_GEN_EXE" OFF)
 CMAKE_DEPENDENT_OPTION(ASAR_GEN_DLL_TEST "Build Asar shared library test suite" ON "ASAR_GEN_DLL" OFF)
 CMAKE_DEPENDENT_OPTION(ASAR_APITESTS_C "Build Asar C API test suite" ON "ASAR_GEN_DLL" OFF)
+CMAKE_DEPENDENT_OPTION(ASAR_APITESTS_CSHARP "Build Asar C# API test suite" ON "ASAR_GEN_DLL;CMAKE_CSharp_COMPILER" OFF)
 
 # Shared settings for Asar test applications
 
@@ -61,6 +66,27 @@ macro(add_c_api_test testname)
 				 COMMAND asar-c-api-${testname} "${CMAKE_SOURCE_DIR}/tests")
 endmacro()
 
+macro(add_csharp_api_test testname)
+	add_executable(
+		asar-csharp-api-${testname}
+
+		"test-${testname}.cs"
+
+		"../asar-dll-bindings/asar.cs"
+	)
+	target_compile_options(
+		asar-csharp-api-${testname}
+		PRIVATE /unsafe /langversion:6
+	)
+	add_dependencies(asar-csharp-api-${testname} asar)
+	add_custom_command(TARGET asar-csharp-api-${testname} POST_BUILD
+		COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+		"$<TARGET_FILE:asar>" "$<TARGET_FILE_DIR:asar-csharp-api-${testname}>" VERBATIM)
+
+	add_test(NAME test-asar-csharp-api-${testname}
+				 COMMAND asar-csharp-api-${testname} "${CMAKE_SOURCE_DIR}/tests")
+endmacro()
+
 set(CXX_EXTENSIONS OFF)
 
 # The main test application's two build options
@@ -110,4 +136,9 @@ endif()
 
 if(ASAR_APITESTS_C)
 	add_c_api_test(init)
+endif()
+
+if(ASAR_APITESTS_CSHARP)
+	enable_language(CSharp)
+	add_csharp_api_test(init)
 endif()
