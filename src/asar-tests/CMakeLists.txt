@@ -48,6 +48,13 @@ if(ASAR_GEN_EXE_TEST)
     )
 
     set_asar_test_shared_properties(asar-app-test)
+
+	if(ASAR_GEN_EXE)
+		file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tests_tmp_app")
+		add_test(
+			NAME EXE_TEST
+			COMMAND asar-app-test "$<TARGET_FILE:asar-standalone>" "${CMAKE_SOURCE_DIR}/tests" "${CMAKE_SOURCE_DIR}/dummy_rom.sfc" "${CMAKE_CURRENT_BINARY_DIR}/tests_tmp_app")
+	endif()
 endif()
 
 if(ASAR_GEN_DLL_TEST)
@@ -64,5 +71,11 @@ if(ASAR_GEN_DLL_TEST)
     target_include_directories(asar-dll-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/")
     target_compile_definitions(asar-dll-test PRIVATE ASAR_TEST_DLL)
 
-    set_asar_test_shared_properties(asar-dll-test)
+	set_asar_test_shared_properties(asar-dll-test)
+	if(ASAR_GEN_EXE)
+		file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tests_tmp_dll")
+		add_test(
+			NAME DLL_TEST
+			COMMAND asar-dll-test "$<TARGET_FILE:asar>" "${CMAKE_SOURCE_DIR}/tests" "${CMAKE_SOURCE_DIR}/dummy_rom.sfc" "${CMAKE_CURRENT_BINARY_DIR}/tests_tmp_dll")
+	endif()
 endif()
