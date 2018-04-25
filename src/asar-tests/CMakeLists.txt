@@ -44,6 +44,7 @@ if(ASAR_GEN_EXE_TEST)
         asar-app-test
         
         "test.cpp"
+		"util.cpp"
     )
 
     set_asar_test_shared_properties(asar-app-test)
@@ -55,6 +56,7 @@ if(ASAR_GEN_DLL_TEST)
         
         "test.cpp"
         
+		"util.cpp"
         "../asar-dll-bindings/asardll.c"
         "../asar-dll-bindings/asardll.h"
     )
