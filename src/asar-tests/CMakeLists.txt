@@ -3,12 +3,19 @@ cmake_minimum_required(VERSION 3.9.0)
 include(CMakeDependentOption)
 include(CheckLanguage)
 
+if(CMAKE_VERSION VERSION_LESS 3.12)
+	# We have backported cmake 3.12's improved python support
+	list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
+endif()
+
+find_package(Python3 COMPONENTS Interpreter OPTIONAL_COMPONENTS Development)
 check_language(CSharp)
 
 CMAKE_DEPENDENT_OPTION(ASAR_GEN_EXE_TEST "Build Asar standalone application test suite" ON "ASAR_GEN_EXE" OFF)
 CMAKE_DEPENDENT_OPTION(ASAR_GEN_DLL_TEST "Build Asar shared library test suite" ON "ASAR_GEN_DLL" OFF)
 CMAKE_DEPENDENT_OPTION(ASAR_APITESTS_C "Build Asar C API test suite" ON "ASAR_GEN_DLL" OFF)
 CMAKE_DEPENDENT_OPTION(ASAR_APITESTS_CSHARP "Build Asar C# API test suite" ON "ASAR_GEN_DLL;CMAKE_CSharp_COMPILER" OFF)
+CMAKE_DEPENDENT_OPTION(ASAR_APITESTS_PYTHON "Build Asar Python API test suite" ON "ASAR_GEN_DLL;PYTHON3_FOUND" OFF)
 
 # Shared settings for Asar test applications
 
@@ -87,6 +94,23 @@ macro(add_csharp_api_test testname)
 				 COMMAND asar-csharp-api-${testname} "${CMAKE_SOURCE_DIR}/tests")
 endmacro()
 
+macro(initialize_python_tests)
+	add_custom_target(copy_python_tests ALL)
+	add_custom_command(TARGET copy_python_tests POST_BUILD COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/asar.py" "${CMAKE_CURRENT_BINARY_DIR}" VERBATIM)
+	add_custom_command(TARGET copy_python_tests POST_BUILD COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:asar>" "${CMAKE_CURRENT_BINARY_DIR}" VERBATIM)
+	add_dependencies(copy_python_tests asar)
+endmacro()
+
+macro(add_python_api_test testname)
+	add_custom_command(TARGET copy_python_tests POST_BUILD
+		COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+		"${CMAKE_CURRENT_SOURCE_DIR}/test-${testname}.py" "${CMAKE_CURRENT_BINARY_DIR}")
+
+	add_test(NAME test-asar-python-api-${testname}
+		COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/test-${testname}.py" "${CMAKE_SOURCE_DIR}/tests"
+		WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+endmacro()
+
 set(CXX_EXTENSIONS OFF)
 
 # The main test application's two build options
@@ -141,4 +165,9 @@ endif()
 if(ASAR_APITESTS_CSHARP)
 	enable_language(CSharp)
 	add_csharp_api_test(init)
+endif()
+
+if(ASAR_APITESTS_PYTHON)
+	initialize_python_tests()
+	add_python_api_test(init)
 endif()
