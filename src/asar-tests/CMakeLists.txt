@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.9.0)
 
-OPTION(ASAR_GEN_EXE_TEST "Build Asar standalone application test suite" ON)
-OPTION(ASAR_GEN_DLL_TEST "Build Asar shared library test suite" ON)
+include(CMakeDependentOption)
+CMAKE_DEPENDENT_OPTION(ASAR_GEN_EXE_TEST "Build Asar standalone application test suite" ON "ASAR_GEN_EXE" OFF)
+CMAKE_DEPENDENT_OPTION(ASAR_GEN_DLL_TEST "Build Asar shared library test suite" ON "ASAR_GEN_DLL" OFF)
+CMAKE_DEPENDENT_OPTION(ASAR_APITESTS_C "Build Asar C API test suite" ON "ASAR_GEN_DLL" OFF)
 
 # Shared settings for Asar test applications
 
@@ -10,7 +12,7 @@ macro(set_asar_test_shared_properties target)
     if(MSVC)
         target_compile_definitions(${target} PRIVATE "_CRT_SECURE_NO_WARNINGS")
         target_compile_options(${target} PRIVATE /Wall)
-        
+
         # These certainly aren't worth a warning, though
         target_compile_options(${target} PRIVATE
             /wd4514 # unreferenced inline function removed
@@ -37,7 +39,31 @@ macro(set_asar_test_shared_properties target)
     endif()
 endmacro()
 
+#Macros for API Tests
+
+macro(add_c_api_test testname)
+	add_executable(
+		asar-c-api-${testname}
+
+		"test-${testname}.cpp"
+		"util.cpp"
+
+		"../asar-dll-bindings/asardll.c"
+		"../asar-dll-bindings/asardll.h"
+	)
+	add_dependencies(asar-c-api-${testname} asar)
+	set_asar_test_shared_properties(asar-c-api-${testname})
+
+	target_include_directories(asar-c-api-${testname} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/")
+	add_custom_command(TARGET asar-c-api-${testname} POST_BUILD COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:asar>" "${CMAKE_CURRENT_BINARY_DIR}" VERBATIM)
+
+	add_test(NAME test-asar-c-api-${testname}
+				 COMMAND asar-c-api-${testname} "${CMAKE_SOURCE_DIR}/tests")
+endmacro()
+
 set(CXX_EXTENSIONS OFF)
+
+# The main test application's two build options
 
 if(ASAR_GEN_EXE_TEST)
 	add_executable(
@@ -78,4 +104,10 @@ if(ASAR_GEN_DLL_TEST)
 			NAME DLL_TEST
 			COMMAND asar-dll-test "$<TARGET_FILE:asar>" "${CMAKE_SOURCE_DIR}/tests" "${CMAKE_SOURCE_DIR}/dummy_rom.sfc" "${CMAKE_CURRENT_BINARY_DIR}/tests_tmp_dll")
 	endif()
+endif()
+
+# API test Applications
+
+if(ASAR_APITESTS_C)
+	add_c_api_test(init)
 endif()
